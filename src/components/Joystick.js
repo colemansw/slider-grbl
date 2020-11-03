@@ -1,19 +1,18 @@
 import React, { useState, useEffect } from 'react'
-import Col from 'react-bootstrap/Col'
-import Row from 'react-bootstrap/Row'
+import { ToggleButton, ToggleButtonGroup, Col, Row } from 'react-bootstrap'
 import ReactNipple from 'react-nipple'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faArrowLeft,
   faArrowRight,
-  faCompressAlt,
+  faStop
 } from '@fortawesome/free-solid-svg-icons'
-import { JogButton } from './Buttons'
 
 const RATE_SCALE = 10
 const DISTANCE_SCALE = 0.1
 
-const Joystick = ({ jog, jogCancel, move, isOk, setIsOk, step, disabled }) => {
-  const [rateVector, setRateVector] = useState({ x: 0, y: 0, rate: 0 })
+const Joystick = ({ jog, setJogCancelled, isOk, setIsOk, trackState, setTrackState }) => {
+  const [rateVector, setRateVector] = useState({ x: 0, y: 0, z: 0, rate: 0 })
 
   const updatePosition = (e, data) => {
     const { angle: { radian = 0 } = {}, distance = 0 } = data
@@ -23,31 +22,41 @@ const Joystick = ({ jog, jogCancel, move, isOk, setIsOk, step, disabled }) => {
         y: Math.sin(radian) * DISTANCE_SCALE,
         rate: distance * RATE_SCALE
       }
-      setRateVector(newVector)
+      setRateVector(oldVector => ({
+        ...oldVector,
+        ...newVector
+      }))
     }
+  }
+
+  const handleChange = (val, e) => {
+    e.currentTarget.blur()
+    setTrackState(val)
   }
 
   useEffect(() => {
     if (!isOk) return
-    const { rate, ...xy } = rateVector
+    if (trackState === 0) {
+      setJogCancelled(true)
+      return
+    }
+    jog({ z: trackState }, false, 200)
+    setIsOk(false)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trackState, isOk])
+
+  useEffect(() => {
+    if (!isOk) return
+    const { rate, ...xyz } = rateVector
     if (rate === 0) return
-    jog(xy, false, rate.toFixed(3))
+    jog(xyz, false, rate.toFixed(3))
     setIsOk(false)
   }, [rateVector, jog, isOk, setIsOk])
 
-  const jogButtons = [
-    {
-      label: { icon: faArrowLeft },
-      handleClick: () => jog({ z: -step })
-    },
-    {
-      label: { icon: faCompressAlt, transform: { rotate: 45 } },
-      handleClick: () => move({ z: 0 })
-    },
-    {
-      label: { icon: faArrowRight },
-      handleClick: () => jog({ z: step })
-    }
+  const trackButtons = [
+    <FontAwesomeIcon icon={faArrowLeft} />,
+    <FontAwesomeIcon icon={faStop} />,
+    <FontAwesomeIcon icon={faArrowRight} />
   ]
 
   return (
@@ -71,21 +80,19 @@ const Joystick = ({ jog, jogCancel, move, isOk, setIsOk, step, disabled }) => {
             onMove={updatePosition}
             onEnd={() => {
               setRateVector({ x: 0, y: 0, rate: 0 })
-              jogCancel()
+              setJogCancelled(true)
             }}
           />
         </Col>
       </Row>
-      <Row noGutters>
-        {jogButtons.map((jb, i) => (
-          <Col key={`c_${i}`} className="m-1">
-            <JogButton
-              label={jb.label}
-              onClick={jb.handleClick}
-              disabled={disabled}
-            />
-          </Col>
-        ))}
+      <Row className="justify-content-center">
+        <ToggleButtonGroup type="radio" value={trackState} name="track" onChange={handleChange}>
+          {trackButtons.map((icon, index) => (
+            <ToggleButton value={(index - 1) * 0.5} variant="outline-dark">
+              {icon}
+            </ToggleButton>
+          ))}
+        </ToggleButtonGroup>
       </Row>
     </>
   )

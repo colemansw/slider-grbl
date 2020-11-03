@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import Button from 'react-bootstrap/Button'
 import Col from 'react-bootstrap/Col'
-import Form from 'react-bootstrap/Form'
 import Row from 'react-bootstrap/Row'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
@@ -21,23 +20,6 @@ import Joystick from './Joystick'
 import { blurClick } from '../lib/utils'
 
 const Control = ({ toggleControl, control }) => {
-  const [stepIndex, setStepIndex] = useState({ jog: 2, joy: 2 })
-  const controlSelect = {
-    jog: {
-      steps: [0.1, 0.5, 1, 5, 10, 50],
-      button: {
-        icon: faDotCircle,
-        title: 'Joystick control'
-      }
-    },
-    joy: {
-      steps: [1, 5, 10, 50, 100, 500],
-       button: {
-        icon: faArrowsAlt,
-        title: 'Jog control'
-      }
-    }
-  }
   const {
     state,
     jog,
@@ -48,16 +30,33 @@ const Control = ({ toggleControl, control }) => {
     isOk } = useController()
   const { status = {} } = state
   const [readyState, setReadyState] = useState()
+  const [jogCancelled, setJogCancelled] = useState(false)
+  const [trackState, setTrackState] = useState(0)
 
+  const controlSelect = {
+    jog: {
+      button: {
+        icon: faDotCircle,
+        title: 'Joystick control'
+      },
+    },
+    joy: {
+      button: {
+        icon: faArrowsAlt,
+        title: 'Jog control'
+      },
 
-  const handleStepChange = e => {
-    const { target } = e
-    setStepIndex(index => ({
-      ...index,
-      [control]: target.selectedIndex
-    }))
-    target.blur()
+    }
   }
+
+  useEffect(() => {
+    if (jogCancelled) {
+      jogCancel()
+      setTrackState(0)
+      setJogCancelled(false)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jogCancelled])
 
   useEffect(() => {
     switch (status.activeState) {
@@ -65,14 +64,16 @@ const Control = ({ toggleControl, control }) => {
         setReadyState({
           variant: 'warning',
           command: () => controllerCommand('unlock'),
-          text: <FontAwesomeIcon icon={faUnlock} />
+          label: <FontAwesomeIcon icon={faUnlock} />,
+          title: 'Unlock'
         })
         break
       case 'Sleep':
         setReadyState({
           variant: 'danger',
           command: () => controllerCommand('reset'),
-          text: <FontAwesomeIcon icon={faRedo} transform="shrink-5" mask={faCog} />
+          label: <FontAwesomeIcon icon={faRedo} transform="shrink-5" mask={faCog} />,
+          title: 'Reset'
         })
         break
       case '':
@@ -80,37 +81,28 @@ const Control = ({ toggleControl, control }) => {
       case null:
         setReadyState({
           variant: 'secondary',
-          text: <FontAwesomeIcon icon={faSpinner} spin />,
-          command: null
+          label: <FontAwesomeIcon icon={faSpinner} spin />,
+          command: null,
+          title: 'Connecting...'
         })
         break
       case 'Jog':
         setReadyState({
           variant: 'secondary',
-          command: () => jogCancel(),
-          text: <FontAwesomeIcon icon={faStop} />
+          command: () => setJogCancelled(true),
+          label: <FontAwesomeIcon icon={faStop} />,
+          title: 'Stop'
         })
         break
       default:
         setReadyState({
           variant: 'info',
           command: () => controllerCommand('sleep'),
-          text: <FontAwesomeIcon icon={faBed} />
+          label: <FontAwesomeIcon icon={faBed} />,
+          title: 'Sleep'
         })
     }
   }, [status, controllerCommand, jogCancel])
-
-  const controlProps = {
-    jog,
-    move,
-    disabled: status.activeState !== 'Idle',
-    step: controlSelect[control].steps[stepIndex[control]],
-    ...control && {
-      jogCancel,
-      isOk,
-      setIsOk
-    }
-  }
 
   return (
     <>
@@ -130,22 +122,21 @@ const Control = ({ toggleControl, control }) => {
         </Col>
       </Row>
       {control === 'jog' ? (
-        <JogControl {...controlProps} />
+        <JogControl
+          jog={jog}
+          disabled={status.activeState !== 'Idle'}
+          move={move}
+        />
       ) : (
-          <Joystick {...controlProps} />
+          <Joystick
+            jog={jog}
+            setJogCancelled={setJogCancelled}
+            isOk={isOk}
+            setIsOk={setIsOk}
+            trackState={trackState}
+            setTrackState={setTrackState}
+          />
         )}
-      <Row>
-        <Col className="mx-1">
-          <Form.Group controlId="selectStep">
-            <Form.Label>
-              Step
-          </Form.Label>
-            <Form.Control as="select" placeholder="Step" value={controlProps.step} onChange={handleStepChange}>
-              {controlSelect[control].steps.map((o, i) => <option key={`o_${i}`}>{o}</option>)}
-            </Form.Control>
-          </Form.Group>
-        </Col>
-      </Row>
     </>
   )
 }

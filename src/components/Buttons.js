@@ -151,7 +151,7 @@ export const GCodeButton = ({ onClick, icon, ...rest }) => {
   )
 }
 
-export const ReadyButton = ({ text, command, variant }) => {
+export const ReadyButton = ({ label, command, variant, title }) => {
   const handleButton = (cmd, e) => {
     const { currentTarget: target } = e
     cmd && cmd()
@@ -161,8 +161,9 @@ export const ReadyButton = ({ text, command, variant }) => {
     <Button {...{
       variant,
       className: 'btn-block',
-      ...command ? { onClick: e => handleButton(command, e) } : {}
-    }}>{text}</Button>
+      ...command ? { onClick: e => handleButton(command, e) } : {},
+      title
+    }}>{label}</Button>
   )
 }
 
@@ -182,4 +183,8 @@ export const JogButton = ({ label, onClick, ...rest }) => {
       <FontAwesomeIcon {...label} />
     </Button>
   )
+}
+
+export const trackButton = ({ label, onClick, ...rest }) => {
+  
 }
