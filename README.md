@@ -6,6 +6,39 @@ The app needs to be [built](#`npm-run-build`) and can be viewed by visiting `htt
 
 After the app has been built, stop `cncjs` and run it with the the command `cncjs --mount /slider:/path/to/the/app/build`. A `~/.cncrc` file can be created for configuration instead of passing command line options (see [`cncjs`](https://github.com/cncjs/cncjs) documentation for details).
 
+## Setting the scaling
+
+With microstepping enabled the stepper motor takes 8 * 200 steps per revolution. 
+
+### Pan and tilt
+
+The motors drive each axis via a wormgear which has a ratio of 40:1.
+Therefore it takes 40 revolutions of the motor to turn each axis through 360°, this gives:
+
+`8 * 200 * 40 steps -> 360°`
+
+`64000 / 360 steps -> 1°`
+
+That works out to 177.778 steps per degree. The pan axis is driven by the X motor and tilt by the Y.
+
+### Track
+
+The motor driving the dolly has a pulley with 16 teeth. This engages with a toothed belt with a pitch of 2mm, therefore each revolution of the pulley moves the dolly 16 * 2mm.
+
+`1600 steps -> 16 * 2mm`
+
+That is 50 steps per mm. The track motor is Z.
+
+To alter the Grbl settings enter
+
+```
+$100=177.778
+$101=177.778
+$102=50
+```
+in the `cncjs` console.
+
+# React info
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
