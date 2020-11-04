@@ -50,13 +50,12 @@ const Control = ({ toggleControl, control }) => {
   }
 
   useEffect(() => {
-    if (jogCancelled) {
+    if (jogCancelled && isOk) {
       jogCancel()
-      setTrackState(0)
       setJogCancelled(false)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [jogCancelled])
+  }, [jogCancelled, isOk])
 
   useEffect(() => {
     switch (status.activeState) {

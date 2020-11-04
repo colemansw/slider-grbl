@@ -1,12 +1,6 @@
 import React, { useState, useEffect } from 'react'
-import { ToggleButton, ToggleButtonGroup, Col, Row } from 'react-bootstrap'
+import { Col, Row, Form } from 'react-bootstrap'
 import ReactNipple from 'react-nipple'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import {
-  faArrowLeft,
-  faArrowRight,
-  faStop
-} from '@fortawesome/free-solid-svg-icons'
 
 const RATE_SCALE = 10
 const DISTANCE_SCALE = 0.1
@@ -29,18 +23,17 @@ const Joystick = ({ jog, setJogCancelled, isOk, setIsOk, trackState, setTrackSta
     }
   }
 
-  const handleChange = (val, e) => {
-    e.currentTarget.blur()
-    setTrackState(val)
+  const handleChange = e => {
+    const { target } = e
+    setTrackState(target.value)
   }
 
   useEffect(() => {
     if (!isOk) return
     if (trackState === 0) {
-      setJogCancelled(true)
       return
     }
-    jog({ z: trackState }, false, 200)
+    jog({ z: trackState/50.0 }, false, 400)
     setIsOk(false)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trackState, isOk])
@@ -52,12 +45,6 @@ const Joystick = ({ jog, setJogCancelled, isOk, setIsOk, trackState, setTrackSta
     jog(xyz, false, rate.toFixed(3))
     setIsOk(false)
   }, [rateVector, jog, isOk, setIsOk])
-
-  const trackButtons = [
-    <FontAwesomeIcon icon={faArrowLeft} />,
-    <FontAwesomeIcon icon={faStop} />,
-    <FontAwesomeIcon icon={faArrowRight} />
-  ]
 
   return (
     <>
@@ -86,13 +73,23 @@ const Joystick = ({ jog, setJogCancelled, isOk, setIsOk, trackState, setTrackSta
         </Col>
       </Row>
       <Row className="justify-content-center">
-        <ToggleButtonGroup type="radio" value={trackState} name="track" onChange={handleChange}>
-          {trackButtons.map((icon, index) => (
-            <ToggleButton value={(index - 1) * 0.5} variant="outline-dark">
-              {icon}
-            </ToggleButton>
-          ))}
-        </ToggleButtonGroup>
+        <Form.Group controlId="trackRange">
+          <Form.Label>Track</Form.Label>
+          <Form.Control
+            type="range"
+            custom
+            name="track"
+            value={trackState}
+            onChange={handleChange}
+            min="-50"
+            max="50"
+            onMouseUp={(e) => {
+              e.currentTarget.blur()
+              setTrackState(0)
+              setJogCancelled(true)
+            }}
+          />
+        </Form.Group>
       </Row>
     </>
   )
