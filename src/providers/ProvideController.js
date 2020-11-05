@@ -41,11 +41,7 @@ const useProvideController = () => {
 
   const jog = (position, move = false, feed = 200) => {
     const asNumbers = toNumbers(position)
-    controller.writeln(`$J=${move ? '' : 'G91 '}${parsePosition(asNumbers)} F${feed}`)
-  }
-
-  const move = position => {
-    jog(position, true)
+    controller.writeln(`$J=${move ? 'G90' : 'G91 '}${parsePosition(asNumbers)} F${feed}`)
   }
 
   const jogCancel = () => {
@@ -125,7 +121,6 @@ const useProvideController = () => {
     keyframes,
     setKeyframes,
     jog,
-    move,
     jogCancel,
     setIsOk,
     isOk

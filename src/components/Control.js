@@ -18,20 +18,19 @@ import { useController } from '../providers/ProvideController'
 import JogControl from './JogControl'
 import Joystick from './Joystick'
 import { blurClick } from '../lib/utils'
+import { STOP, MOVE, STEP, STEPPED } from '../lib/constants'
 
 const Control = ({ toggleControl, control }) => {
   const {
     state,
     jog,
-    move,
     jogCancel,
     controllerCommand,
     setIsOk,
     isOk } = useController()
   const { status = {} } = state
-  const [readyState, setReadyState] = useState()
-  const [jogCancelled, setJogCancelled] = useState(false)
-  const [trackState, setTrackState] = useState(0)
+  const [controllerState, setControllerState] = useState()
+  const [rateVector, setRateVector] = useState({})
 
   const controlSelect = {
     jog: {
@@ -50,17 +49,9 @@ const Control = ({ toggleControl, control }) => {
   }
 
   useEffect(() => {
-    if (jogCancelled && isOk) {
-      jogCancel()
-      setJogCancelled(false)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [jogCancelled, isOk])
-
-  useEffect(() => {
     switch (status.activeState) {
       case 'Alarm':
-        setReadyState({
+        setControllerState({
           variant: 'warning',
           command: () => controllerCommand('unlock'),
           label: <FontAwesomeIcon icon={faUnlock} />,
@@ -68,7 +59,7 @@ const Control = ({ toggleControl, control }) => {
         })
         break
       case 'Sleep':
-        setReadyState({
+        setControllerState({
           variant: 'danger',
           command: () => controllerCommand('reset'),
           label: <FontAwesomeIcon icon={faRedo} transform="shrink-5" mask={faCog} />,
@@ -78,7 +69,7 @@ const Control = ({ toggleControl, control }) => {
       case '':
       case undefined:
       case null:
-        setReadyState({
+        setControllerState({
           variant: 'secondary',
           label: <FontAwesomeIcon icon={faSpinner} spin />,
           command: null,
@@ -86,15 +77,18 @@ const Control = ({ toggleControl, control }) => {
         })
         break
       case 'Jog':
-        setReadyState({
+        setControllerState({
           variant: 'secondary',
-          command: () => setJogCancelled(true),
+          command: () => setRateVector(v => ({
+            ...v,
+            type: STOP
+          })),
           label: <FontAwesomeIcon icon={faStop} />,
           title: 'Stop'
         })
         break
       default:
-        setReadyState({
+        setControllerState({
           variant: 'info',
           command: () => controllerCommand('sleep'),
           label: <FontAwesomeIcon icon={faBed} />,
@@ -103,11 +97,31 @@ const Control = ({ toggleControl, control }) => {
     }
   }, [status, controllerCommand, jogCancel])
 
+  useEffect(() => {
+    if (!isOk) return
+    const { rate = 200, type = STOP, ...xyz } = rateVector
+    if (type === STEPPED) return
+    if (rate === 0 || type === STOP) {
+      jogCancel()
+      return
+    }
+    jog(xyz, type === MOVE, rate.toFixed(3))
+    setIsOk(false)
+    if (type === STEP || type === MOVE) {
+      setRateVector(v => ({
+        ...v,
+        type: STEPPED
+      }))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rateVector, isOk])
+
+
   return (
     <>
       <Row className="mb-1" noGutters>
         <Col className="mx-1">
-          <ReadyButton  {...readyState} />
+          <ReadyButton  {...controllerState} />
         </Col>
         <Col className="mx-1">
           <Button
@@ -122,19 +136,11 @@ const Control = ({ toggleControl, control }) => {
       </Row>
       {control === 'jog' ? (
         <JogControl
-          jog={jog}
           disabled={status.activeState !== 'Idle'}
-          move={move}
+          setRateVector={setRateVector}
         />
       ) : (
-          <Joystick
-            jog={jog}
-            setJogCancelled={setJogCancelled}
-            isOk={isOk}
-            setIsOk={setIsOk}
-            trackState={trackState}
-            setTrackState={setTrackState}
-          />
+          <Joystick setRateVector={setRateVector} />
         )}
     </>
   )

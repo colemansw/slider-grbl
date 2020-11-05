@@ -10,7 +10,7 @@ export const objDiff = (keys, subtract, from) => Object.assign(
   }))
 )
 
-export const toNumbers = (obj) => (Object.assign(
+export const toNumbers = (obj={}) => (Object.assign(
   ...Object.keys(obj).map(key => ({
     [key]: Number(obj[key])
   }))

@@ -29,7 +29,7 @@ const Keyframes = ({ currentPosition }) => {
     keyframes,
     setKeyframes,
     state,
-    move,
+    jog,
     isOk,
     setIsOk,
     controllerCommand
@@ -150,7 +150,7 @@ const Keyframes = ({ currentPosition }) => {
                 disabled={isDisabled}
               />
               <GoToPositionButton
-                onClick={() => move(keyframes[currentSelection].position)}
+                onClick={() => jog(keyframes[currentSelection].position, true)}
                 disabled={isDisabled}
               />
             </ButtonGroup>

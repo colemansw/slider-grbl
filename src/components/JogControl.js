@@ -9,8 +9,9 @@ import {
   faCompressArrowsAlt
 } from '@fortawesome/free-solid-svg-icons'
 import { JogButton } from './Buttons'
+import { MOVE, STEP } from '../lib/constants'
 
-const JogControl = ({ disabled, jog, move }) => {
+const JogControl = ({ disabled, setRateVector }) => {
   const [step, setStep] = useState(1)
   const steps = [0.1, 0.5, 1, 5, 10, 50]
 
@@ -25,62 +26,62 @@ const JogControl = ({ disabled, jog, move }) => {
     [
       {
         label: { icon: faArrowUp, transform: { rotate: -45 } },
-        handleClick: () => jog({ x: -step, y: step })
+        handleClick: () => setRateVector({ x: -step, y: step, type: STEP })
       },
       {
         label: { icon: faArrowUp },
-        handleClick: () => jog({ y: step })
+        handleClick: () => setRateVector({ y: step, type: STEP })
       },
       {
         label: { icon: faArrowUp, transform: { rotate: 45 } },
-        handleClick: () => jog({ x: step, y: step })
+        handleClick: () => setRateVector({ x: step, y: step, type: STEP })
       },
       {
         label: { icon: faArrowUp },
-        handleClick: () => jog({ z: step })
+        handleClick: () => setRateVector({ z: step, type: STEP })
       }
     ], [
       {
         label: { icon: faArrowLeft },
-        handleClick: () => jog({ x: -step })
+        handleClick: () => setRateVector({ x: -step, type: STEP })
       },
       {
         label: { icon: faCompressArrowsAlt, transform: { rotate: -45 } },
-        handleClick: () => move({ x: 0, y: 0 })
+        handleClick: () => setRateVector({ x: 0, y: 0, type: MOVE })
       },
       {
         label: { icon: faArrowRight },
-        handleClick: () => jog({ x: step })
+        handleClick: () => setRateVector({ x: step, type: STEP })
       },
       {
         label: { icon: faCompressAlt, transform: { rotate: -45 } },
-        handleClick: () => move({ z: 0 })
+        handleClick: () => setRateVector({ z: 0, type: MOVE })
       }
     ], [
       {
         label: { icon: faArrowDown, transform: { rotate: 45 } },
-        handleClick: () => jog({ x: -step, y: -step })
+        handleClick: () => setRateVector({ x: -step, y: -step, type: STEP })
       },
       {
         label: { icon: faArrowDown },
-        handleClick: () => jog({ y: -step })
+        handleClick: () => setRateVector({ y: -step, type: STEP })
       },
       {
         label: { icon: faArrowDown, transform: { rotate: -45 } },
-        handleClick: () => jog({ x: step, y: -step })
+        handleClick: () => setRateVector({ x: step, y: -step, type: STEP })
       },
       {
         label: { icon: faArrowDown },
-        handleClick: () => jog({ z: -step })
+        handleClick: () => setRateVector({ z: -step, type: STEP })
       }
     ], [
       {
         label: { icon: faCompressAlt, transform: { rotate: 45 } },
-        handleClick: () => move({ x: 0 })
+        handleClick: () => setRateVector({ x: 0, type: MOVE })
       },
       {
         label: { icon: faCompressAlt, transform: { rotate: -45 } },
-        handleClick: () => move({ y: 0 })
+        handleClick: () => setRateVector({ y: 0, type: MOVE })
       }
     ]
   ]
@@ -108,7 +109,9 @@ const JogControl = ({ disabled, jog, move }) => {
               Step
           </Form.Label>
             <Form.Control as="select" placeholder="Step" value={step} onChange={handleStepChange}>
-              {steps.map((o, i) => <option key={`o_${i}`}>{o}</option>)}
+              {steps.map(
+                (o, i) => <option key={`o_${i}`}>{o}</option>
+              )}
             </Form.Control>
           </Form.Group>
         </Col>

@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react'
 import { Col, Row, Form } from 'react-bootstrap'
 import ReactNipple from 'react-nipple'
+import { STARTED, STOP } from '../lib/constants'
 
 const RATE_SCALE = 10
 const DISTANCE_SCALE = 0.1
 
-const Joystick = ({ jog, setJogCancelled, isOk, setIsOk, trackState, setTrackState }) => {
-  const [rateVector, setRateVector] = useState({ x: 0, y: 0, z: 0, rate: 0 })
+const Joystick = ({ setRateVector }) => {
+  const [track, setTrack] = useState(0)
 
   const updatePosition = (e, data) => {
     const { angle: { radian = 0 } = {}, distance = 0 } = data
@@ -18,33 +19,29 @@ const Joystick = ({ jog, setJogCancelled, isOk, setIsOk, trackState, setTrackSta
       }
       setRateVector(oldVector => ({
         ...oldVector,
-        ...newVector
+        ...newVector,
+        type: STARTED
       }))
     }
   }
 
   const handleChange = e => {
-    const { target } = e
-    setTrackState(target.value)
+    const { target: { value } } = e
+    setTrack(value)
   }
 
   useEffect(() => {
-    if (!isOk) return
-    if (trackState === 0) {
+    if (track === 0) {
+      setRateVector({rate:0, type: STOP})
       return
     }
-    jog({ z: trackState/50.0 }, false, 400)
-    setIsOk(false)
+    setRateVector({
+      z: Math.sign(track) * DISTANCE_SCALE,
+      rate: Math.abs(track) * RATE_SCALE,
+      type: STARTED
+    })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [trackState, isOk])
-
-  useEffect(() => {
-    if (!isOk) return
-    const { rate, ...xyz } = rateVector
-    if (rate === 0) return
-    jog(xyz, false, rate.toFixed(3))
-    setIsOk(false)
-  }, [rateVector, jog, isOk, setIsOk])
+  }, [track])
 
   return (
     <>
@@ -64,10 +61,16 @@ const Joystick = ({ jog, setJogCancelled, isOk, setIsOk, trackState, setTrackSta
               height: 150,
               position: 'relative'
             }}
+            onStart={() => {
+              setRateVector(vector => ({
+                ...vector,
+                type: STARTED
+              }))
+            }}
             onMove={updatePosition}
             onEnd={() => {
-              setRateVector({ x: 0, y: 0, rate: 0 })
-              setJogCancelled(true)
+              setRateVector({ x: 0, y: 0, rate: 0, type: STOP })
+              // setJogCancelled(true)
             }}
           />
         </Col>
@@ -79,14 +82,19 @@ const Joystick = ({ jog, setJogCancelled, isOk, setIsOk, trackState, setTrackSta
             type="range"
             custom
             name="track"
-            value={trackState}
+            value={track}
             onChange={handleChange}
             min="-50"
             max="50"
+            onMouseDown={() => {
+              setRateVector({
+                rate: 0,
+                type: STARTED
+              })
+            }}
             onMouseUp={(e) => {
               e.currentTarget.blur()
-              setTrackState(0)
-              setJogCancelled(true)
+              setTrack(0)
             }}
           />
         </Form.Group>
