@@ -10,37 +10,11 @@ const calculateStep = (position, factor) => Object.assign(
 const step = (position, interval, shutter) => (
   `G1 ${parsePosition(
     position,
-    { precision: 3, separator: ' ' }
+    { separator: ' ' }
   )} S${shutter} F${(MS_IN_MINUTE / interval).toFixed(3)}\n`
 )
 
-const steps = (deltaPos, endPosition, totalTime, closedInterval, shutterInterval) => (
-  {
-    openStep: step(
-      calculateStep(
-        deltaPos,
-        shutterInterval / totalTime
-      ),
-      shutterInterval,
-      OPEN
-    ),
-    closedStep: step(
-      calculateStep(
-        deltaPos,
-        closedInterval / totalTime
-      ),
-      closedInterval,
-      CLOSED
-    ),
-    endStep: step(
-      endPosition,
-      shutterInterval,
-      OPEN
-    )
-  }
-)
-
-function* gCode({ closedStep, openStep, endStep }, frames) {
+function* gCode(closedStep, openStep, endStep, frames) {
   while (frames > 1) {
     yield closedStep
     yield openStep
@@ -57,43 +31,78 @@ export function* gCodeGenerator(keyframes) {
 
   yield 'G90\n' // Move to absolute position.
   yield 'M3 S0\n' // M3 - activate (laser) shutter, S0 -> 0volts.
-  yield `G0 ${parsePosition(
-    startPosition,
-    { precision: 3, separator: ' ' }
-  )}\n` // Move to first position.
+  yield `G0 ${parsePosition(startPosition, { separator: ' ' })}\n` // Move to first position.
   yield 'G4 P2\n' // Pause for 2 seconds.
   yield 'G93\n' // G93 - inverse time mode.
- 
-  const { frames, interval, shutterSpeed } = toNumbers(keyframes[1].transition)
+
   let endPosition = toNumbers(keyframes[1].position)
-  let shutterInterval = shutterSpeed <= 200 ? 200 : shutterSpeed
-  const { openStep, closedStep, endStep } = steps(
-    objDiff(AXES, startPosition, endPosition),
+  const { openStep, closedStep, endStep, frames } = steps(
+    startPosition,
     endPosition,
-    (frames - 1) * interval * 1000 + shutterInterval,
-    interval * 1000 - shutterInterval,
-    shutterInterval
+    toNumbers(keyframes[1].transition),
+    firstInterval
   )
+
   yield 'G91\n'
   yield openStep
-  yield* gCode({ closedStep, openStep, endStep }, frames - 1)
+  yield* gCode(closedStep, openStep, endStep, frames - 1)
+
   for (let keyframe of keyframes.slice(2)) {
     startPosition = endPosition
     endPosition = toNumbers(keyframe.position)
-    const { frames, interval, shutterSpeed } = toNumbers(keyframe.transition)
-    shutterInterval = shutterSpeed <= 200 ? 200 : shutterSpeed
-    yield* gCode(
-      steps(
-        objDiff(AXES, startPosition, endPosition),
-        endPosition,
-        frames * interval * 1000,
-        interval * 1000 - shutterInterval,
-        shutterInterval
-      ),
-      frames
+    const { openStep, closedStep, endStep, frames } = steps(
+      startPosition,
+      endPosition,
+      toNumbers(keyframe.transition),
+      otherIntervals
     )
+    yield* gCode(openStep, closedStep, endStep, frames)
   }
+
   yield 'M5\n' // M5 deactivate (laser) shutter
+}
+
+const firstInterval = (...args) => {
+  const [frames, interval, shutterInterval] = args
+  return (frames - 1) * interval * 1000 - shutterInterval
+}
+
+const otherIntervals = (...args) => {
+  const [frames, interval] = args
+  return frames * interval * 1000
+}
+
+const steps = (startPosition, endPosition, transition, intervalFn) => {
+  const { frames, interval, shutterSpeed } = transition
+  const shutterInterval = shutterSpeed <= 200 ? 200 : shutterSpeed
+  const positionDelta = objDiff(AXES, startPosition, endPosition)
+  const totalTime = intervalFn(frames, interval, shutterInterval)
+  const closedInterval = interval * 1000 - shutterInterval
+
+  return {
+    openStep: step(
+      calculateStep(
+        positionDelta,
+        shutterInterval / totalTime
+      ),
+      shutterInterval,
+      OPEN
+    ),
+    closedStep: step(
+      calculateStep(
+        positionDelta,
+        closedInterval / totalTime
+      ),
+      closedInterval,
+      CLOSED
+    ),
+    endStep: step(
+      endPosition,
+      shutterInterval,
+      OPEN
+    ),
+    frames
+  }
 }
 
 function gCodeBlob(keyframes) {

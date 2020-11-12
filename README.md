@@ -2,13 +2,16 @@
 
 A project to control a time lapse camera dolly using [cncjs](https://cnc.js.org).
 
-The app needs to be [built](#`npm-run-build`) and can be viewed by visiting `http://yourhostname:8000/slider`.
+Once the app has been [built](#`npm-run-build`), stop `cncjs` and run it with the the command `cncjs --mount /slider:/path/to/the/app/build/`.
 
-After the app has been built, stop `cncjs` and run it with the the command `cncjs --mount /slider:/path/to/the/app/build`. A `~/.cncrc` file can be created for configuration instead of passing command line options (see [`cncjs`](https://github.com/cncjs/cncjs) documentation for details).
+A `~/.cncrc` file can be created for configuration instead of passing command line options (see [`cncjs`](https://github.com/cncjs/cncjs) documentation for details).
+
+The app can be viewed by visiting `http://yourhostname:8000/slider`.
+
 
 ## Setting the scaling
 
-With microstepping enabled the stepper motor takes 8 * 200 steps per revolution. 
+With microstepping enabled the stepper motors take 8 * 200 steps per revolution. 
 
 ### Pan and tilt
 
@@ -23,11 +26,11 @@ That works out to 177.778 steps per degree. The pan axis is driven by the X moto
 
 ### Track
 
-The motor driving the dolly has a pulley with 16 teeth. This engages with a toothed belt with a pitch of 2mm, therefore each revolution of the pulley moves the dolly 16 * 2mm.
+A pulley with 16 teeth is driven by the track motor. This engages with a toothed belt that has a pitch of 2mm, therefore each revolution of the pulley moves the dolly 16 * 2mm.
 
-`1600 steps -> 16 * 2mm`
+`1600 steps -> 32mm`
 
-That is 50 steps per mm. The track motor is Z.
+That is 50 steps per mm. The track motor axis is Z.
 
 To alter the Grbl settings enter
 
