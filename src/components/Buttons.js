@@ -6,8 +6,13 @@ import {
   faEdit,
   faSync,
   faCrosshairs,
-  faPlus
+  faPlus,
+  faDotCircle,
+  faArrowsAlt,
+  faHome
 } from '@fortawesome/free-solid-svg-icons'
+
+import { blurClick } from '../lib/utils'
 
 const blur = (f, e) => {
   e.preventDefault()
@@ -115,7 +120,7 @@ export const UpdateKeyframeButton = ({
   )
 }
 export const GoToPositionButton = ({ onClick, disabled }) => {
-  
+
   return (
     <Button
       variant="dark"
@@ -135,7 +140,7 @@ export const EditTransitionButton = ({ selectionIsOK, setShowEdit, disabled }) =
   return (
     <Button
       variant="info"
-      onClick={e=>blur(handleClick, e)}
+      onClick={e => blur(handleClick, e)}
       disabled={disabled}
     >
       <FontAwesomeIcon icon={faEdit} />
@@ -163,7 +168,7 @@ export const ReadyButton = ({ label, command, variant, title }) => {
       className: 'btn-block',
       ...command ? { onClick: e => handleButton(command, e) } : {},
       title
-    }}>{label}</Button>
+    }}><FontAwesomeIcon {...label} /></Button>
   )
 }
 
@@ -185,6 +190,41 @@ export const JogButton = ({ label, onClick, ...rest }) => {
   )
 }
 
-export const trackButton = ({ label, onClick, ...rest }) => {
-  
+export const ControlButton = ({ toggleControl, control }) => {
+  const controlSelect = {
+    jog: {
+      icon: faDotCircle,
+      title: 'Joystick control'
+    },
+    joy: {
+      icon: faArrowsAlt,
+      title: 'Jog control'
+    }
+  }
+
+  return (
+    <Button
+      className="btn-block"
+      variant="secondary"
+      onClick={e => blurClick(toggleControl, e)}
+      title={controlSelect[control].title}
+    >
+      <FontAwesomeIcon icon={controlSelect[control].icon} />
+    </Button>
+  )
+}
+
+export const HomeButton = ({ status, handleClick }) => {
+  const { activeState } = status
+  return (
+    <Button
+      className="btn-block"
+      variant="dark"
+      title="Home"
+      onClick={e => blurClick(handleClick, e)}
+      disabled={activeState === 'Run' || activeState === 'Jog' || activeState === 'Sleep'}
+      >
+        <FontAwesomeIcon icon={faHome} />
+      </Button>
+  )
 }

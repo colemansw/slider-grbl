@@ -1,23 +1,17 @@
 import React, { useState, useEffect } from 'react'
-import Button from 'react-bootstrap/Button'
-import Col from 'react-bootstrap/Col'
-import Row from 'react-bootstrap/Row'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { Col, Row } from 'react-bootstrap'
 import {
   faUnlock,
   faRedo,
   faSpinner,
   faStop,
   faBed,
-  faCog,
-  faDotCircle,
-  faArrowsAlt
+  faCog
 } from '@fortawesome/free-solid-svg-icons'
-import { ReadyButton } from './Buttons'
+import { ReadyButton, ControlButton, HomeButton } from './Buttons'
 import { useController } from '../providers/ProvideController'
 import JogControl from './JogControl'
 import Joystick from './Joystick'
-import { blurClick } from '../lib/utils'
 import { STOP, MOVE, STEP, STEPPED } from '../lib/constants'
 
 const Control = ({ toggleControl, control }) => {
@@ -29,73 +23,52 @@ const Control = ({ toggleControl, control }) => {
     setIsOk,
     isOk } = useController()
   const { status = {} } = state
-  const [controllerState, setControllerState] = useState()
   const [rateVector, setRateVector] = useState({})
 
-  const controlSelect = {
-    jog: {
-      button: {
-        icon: faDotCircle,
-        title: 'Joystick control'
-      },
-    },
-    joy: {
-      button: {
-        icon: faArrowsAlt,
-        title: 'Jog control'
-      },
-
-    }
-  }
-
-  useEffect(() => {
-    switch (status.activeState) {
+  const controllerButton = activeState => {
+    switch (activeState) {
       case 'Alarm':
-        setControllerState({
+        return {
           variant: 'warning',
           command: () => controllerCommand('unlock'),
-          label: <FontAwesomeIcon icon={faUnlock} />,
+          label: { icon: faUnlock },
           title: 'Unlock'
-        })
-        break
+        }
       case 'Sleep':
-        setControllerState({
+        return {
           variant: 'danger',
           command: () => controllerCommand('reset'),
-          label: <FontAwesomeIcon icon={faRedo} transform="shrink-5" mask={faCog} />,
+          label: {icon:faRedo, transform: "shrink-5", mask:faCog},
           title: 'Reset'
-        })
-        break
+        }
       case '':
       case undefined:
       case null:
-        setControllerState({
+        return {
           variant: 'secondary',
-          label: <FontAwesomeIcon icon={faSpinner} spin />,
+          label: {icon:faSpinner, spin: true},
           command: null,
           title: 'Connecting...'
-        })
-        break
+        }
       case 'Jog':
-        setControllerState({
+        return {
           variant: 'secondary',
           command: () => setRateVector(v => ({
             ...v,
             type: STOP
           })),
-          label: <FontAwesomeIcon icon={faStop} />,
+          label: {icon: faStop},
           title: 'Stop'
-        })
-        break
+        }
       default:
-        setControllerState({
+        return {
           variant: 'info',
           command: () => controllerCommand('sleep'),
-          label: <FontAwesomeIcon icon={faBed} />,
+          label: {icon:faBed},
           title: 'Sleep'
-        })
+        }
     }
-  }, [status, controllerCommand, jogCancel])
+  }
 
   useEffect(() => {
     if (!isOk) return
@@ -116,22 +89,25 @@ const Control = ({ toggleControl, control }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rateVector, isOk])
 
-
   return (
     <>
       <Row className="mb-1" noGutters>
         <Col className="mx-1">
-          <ReadyButton  {...controllerState} />
+          <ReadyButton  {...controllerButton(status.activeState)} />
+        </Col>
+        <Col>
+        <HomeButton
+          status={status}
+          handleClick={() => {
+            controllerCommand('homing')
+          }}
+        />
         </Col>
         <Col className="mx-1">
-          <Button
-            className="btn-block"
-            variant="secondary"
-            onClick={e => blurClick(toggleControl, e)}
-            title={controlSelect[control].button.title}
-          >
-            <FontAwesomeIcon icon={controlSelect[control].button.icon} />
-          </Button>
+          <ControlButton
+            toggleControl={toggleControl}
+            control={control}
+          />
         </Col>
       </Row>
       {control === 'jog' ? (
